@@ -1,0 +1,67 @@
+version: "3.7"
+services:
+    app:
+        build:
+            args:
+                user: rickneves
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        container_name: api
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+        networks:
+            - crud-nextjs
+        depends_on:
+            - postgres
+            - nginx
+
+    postgres:
+        image: postgres
+        container_name: postgres
+        restart: always
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: crud-nextjs
+            POSTGRES_PASSWORD: root
+            POSTGRES_USER: root
+            PGDATA: /var/lib/postgresql/data
+        ports:
+            - "5432:5432"
+        networks:
+            - crud-nextjs
+
+    postgresadmin:
+        image: dpage/pgadmin4
+        container_name: postgres-admin
+        ports:
+            - "5050:80"
+        depends_on:
+            - postgres
+        environment:
+            PGADMIN_DEFAULT_EMAIL: ricknevesbc@hotmail.com
+            PGADMIN_DEFAULT_PASSWORD: root
+        networks:
+            - crud-nextjs
+
+    nginx:
+        image: nginx:1.17-alpine
+        container_name: nginx
+        restart: unless-stopped
+        ports:
+            - 8000:80
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx:/etc/nginx/conf.d
+        networks:
+            - crud-nextjs
+
+networks:
+    crud-nextjs:
+        driver: bridge
+
+volumes:
+    postgres-data:
